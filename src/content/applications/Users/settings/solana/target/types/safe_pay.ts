@@ -1,0 +1,315 @@
+export type SafePay = {
+  "version": "0.1.0",
+  "name": "safe_pay",
+  "instructions": [
+    {
+      "name": "initializeNewGrant",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "walletToWithdrawFrom",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "state",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "idx",
+            "type": "u64"
+          },
+          {
+            "name": "recruiter",
+            "type": "publicKey"
+          },
+          {
+            "name": "candidate",
+            "type": "publicKey"
+          },
+          {
+            "name": "mintOfTokenBeingSent",
+            "type": "publicKey"
+          },
+          {
+            "name": "escrowWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "interviewPrice",
+            "type": "u64"
+          },
+          {
+            "name": "stage",
+            "type": "u8"
+          },
+          {
+            "name": "isAuthorizedToReserveSlot",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "Stage",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "FundsDeposited"
+          },
+          {
+            "name": "EscrowComplete"
+          },
+          {
+            "name": "PullBackComplete"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WalletToWithdrawFromInvalid",
+      "msg": "Wallet to withdraw from is not owned by owner"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidStateIdx",
+      "msg": "State index is inconsistent"
+    },
+    {
+      "code": 6002,
+      "name": "DelegateNotSetCorrectly",
+      "msg": "Delegate is not set correctly"
+    },
+    {
+      "code": 6003,
+      "name": "StageInvalid",
+      "msg": "Stage is invalid"
+    }
+  ]
+};
+
+export const IDL: SafePay = {
+  "version": "0.1.0",
+  "name": "safe_pay",
+  "instructions": [
+    {
+      "name": "initializeNewGrant",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "walletToWithdrawFrom",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "state",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "idx",
+            "type": "u64"
+          },
+          {
+            "name": "recruiter",
+            "type": "publicKey"
+          },
+          {
+            "name": "candidate",
+            "type": "publicKey"
+          },
+          {
+            "name": "mintOfTokenBeingSent",
+            "type": "publicKey"
+          },
+          {
+            "name": "escrowWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "interviewPrice",
+            "type": "u64"
+          },
+          {
+            "name": "stage",
+            "type": "u8"
+          },
+          {
+            "name": "isAuthorizedToReserveSlot",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "Stage",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "FundsDeposited"
+          },
+          {
+            "name": "EscrowComplete"
+          },
+          {
+            "name": "PullBackComplete"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WalletToWithdrawFromInvalid",
+      "msg": "Wallet to withdraw from is not owned by owner"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidStateIdx",
+      "msg": "State index is inconsistent"
+    },
+    {
+      "code": 6002,
+      "name": "DelegateNotSetCorrectly",
+      "msg": "Delegate is not set correctly"
+    },
+    {
+      "code": 6003,
+      "name": "StageInvalid",
+      "msg": "Stage is invalid"
+    }
+  ]
+};
