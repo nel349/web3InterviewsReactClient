@@ -22,6 +22,8 @@ import ExpandMoreTwoToneIcon from '@mui/icons-material/ExpandMoreTwoTone';
 import AccountBoxTwoToneIcon from '@mui/icons-material/AccountBoxTwoTone';
 import LockOpenTwoToneIcon from '@mui/icons-material/LockOpenTwoTone';
 import AccountTreeTwoToneIcon from '@mui/icons-material/AccountTreeTwoTone';
+import { Web3Auth } from "@web3auth/modal";
+import { CHAIN_NAMESPACES } from '@web3auth/base';
 
 const UserBoxButton = styled(Button)(
   ({ theme }) => `
@@ -75,6 +77,28 @@ function HeaderUserbox() {
   const handleClose = (): void => {
     setOpen(false);
   };
+
+  const web3auth = new Web3Auth({
+    clientId: 'BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8',
+    chainConfig: {
+        chainNamespace: CHAIN_NAMESPACES.SOLANA,
+        chainId: '0x1',
+        rpcTarget: "https://rpc.ankr.com/solana", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
+        displayName: "solana",
+        ticker: "SOL",
+        tickerName: "solana",
+    },
+    uiConfig: {
+        theme: 'dark',
+        loginMethodsOrder: ['facebook', 'google'],
+        appLogo: 'https://web3auth.io/images/w3a-L-Favicon-1.svg' // Your App Logo Here
+    }
+});
+
+  const web3AuthConnect = async (): Promise<void> => {
+    await web3auth.initModal();
+    web3auth.connect();
+  }
 
   return (
     <>
@@ -135,8 +159,8 @@ function HeaderUserbox() {
         </List>
         <Divider />
         <Box sx={{ m: 1 }}>
-          <Button color="primary" fullWidth>
-            <LockOpenTwoToneIcon sx={{ mr: 1 }} />
+          <Button color="primary" fullWidth onClick= { web3AuthConnect }>
+            <LockOpenTwoToneIcon sx={{ mr: 1 }}/>
             Sign out
           </Button>
         </Box>
