@@ -6,10 +6,8 @@ import CalendlyService from './calendly/services/calendlyService';
 import ZoomService, { ZOOM_AUTHENTICATION_URL } from './calendly/services/zoomService';
 import { useSearchParams } from 'react-router-dom';
 import AnchorClient from './solana/anchorClient';
-import CountProvider from './CountProvider';
+import AuthenticationProvider from './AuthenticationProvider';
 import { ComponentCount } from './ComponentCount';
-import { AnotherComponentCount } from './AnotherComponentCount';
-
 let BASE_URL = "https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=";
 
 function ManagementUserSettings() {
@@ -147,8 +145,7 @@ function ManagementUserSettings() {
 
   return (
     <>
-      <CountProvider>
-        <Helmet>
+        {/* <Helmet>
           <title>User Settings - Applications</title>
         </Helmet>
 
@@ -202,9 +199,8 @@ function ManagementUserSettings() {
         </Button>
 
 
-        <ComponentCount></ComponentCount>
-        <AnotherComponentCount></AnotherComponentCount>
-      </CountProvider>,
+        <ComponentCount></ComponentCount>, */}
+      
 
     </>
   );

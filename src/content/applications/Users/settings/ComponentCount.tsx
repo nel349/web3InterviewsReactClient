@@ -1,24 +1,24 @@
 import "./style.css";
-import { useCountContext } from "./CountProvider";
+import { useAuthenticationContext } from "./AuthenticationProvider";
 
 export const ComponentCount = () => {
-  const { count, setCount } = useCountContext();
+  const { signedIn, setSigned } = useAuthenticationContext();
 
   return (
     <div>
       <button
         onClick={(e) => {
-          setCount(count * 10);
+          setSigned(true);
         }}
       >
-        Mult
+        Set True
       </button>
       <button
         onClick={(e) => {
-          setCount(count / 10);
+          setSigned(false);
         }}
       >
-        Divide
+        Set False
       </button>
     </div>
   );
