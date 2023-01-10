@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { MouseEventHandler, useRef, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 
@@ -24,6 +24,11 @@ import LockOpenTwoToneIcon from '@mui/icons-material/LockOpenTwoTone';
 import AccountTreeTwoToneIcon from '@mui/icons-material/AccountTreeTwoTone';
 import { Web3Auth } from "@web3auth/modal";
 import { CHAIN_NAMESPACES } from '@web3auth/base';
+import React from 'react';
+import { SolanaWallet } from "@web3auth/solana-provider";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { useAuthenticationContext } from "../../../../content/applications/Users/settings/AuthenticationProvider";
+import { PhantomAdapter } from "@web3auth/phantom-adapter";
 
 const UserBoxButton = styled(Button)(
   ({ theme }) => `
@@ -69,6 +74,7 @@ function HeaderUserbox() {
 
   const ref = useRef<any>(null);
   const [isOpen, setOpen] = useState<boolean>(false);
+  const [isConnected, setConnected] = useState<boolean>(false);
 
   const handleOpen = (): void => {
     setOpen(true);
@@ -77,28 +83,6 @@ function HeaderUserbox() {
   const handleClose = (): void => {
     setOpen(false);
   };
-
-  const web3auth = new Web3Auth({
-    clientId: 'BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8',
-    chainConfig: {
-        chainNamespace: CHAIN_NAMESPACES.SOLANA,
-        chainId: '0x1',
-        rpcTarget: "https://rpc.ankr.com/solana", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
-        displayName: "solana",
-        ticker: "SOL",
-        tickerName: "solana",
-    },
-    uiConfig: {
-        theme: 'dark',
-        loginMethodsOrder: ['facebook', 'google'],
-        appLogo: 'https://web3auth.io/images/w3a-L-Favicon-1.svg' // Your App Logo Here
-    }
-});
-
-  const web3AuthConnect = async (): Promise<void> => {
-    await web3auth.initModal();
-    web3auth.connect();
-  }
 
   return (
     <>
@@ -159,14 +143,145 @@ function HeaderUserbox() {
         </List>
         <Divider />
         <Box sx={{ m: 1 }}>
-          <Button color="primary" fullWidth onClick= { web3AuthConnect }>
-            <LockOpenTwoToneIcon sx={{ mr: 1 }}/>
-            Sign out
-          </Button>
+          <LoginControl handleClose={handleClose} />
         </Box>
       </Popover>
     </>
   );
 }
+
+function LoginControl(props: any) {
+
+  const { signedIn, setSigned } = useAuthenticationContext();
+  const [solanaWallet, setSolanaWallet] = useState<SolanaWallet>();
+
+  let web3auth = new Web3Auth({
+    clientId: 'BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8',
+    chainConfig: {
+      chainNamespace: CHAIN_NAMESPACES.SOLANA,
+      chainId: '0x2',
+      rpcTarget: "https://api.devnet.solana.com", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
+      displayName: "solana",
+      ticker: "SOL",
+      tickerName: "solana",
+    },
+    uiConfig: {
+      theme: 'dark',
+      loginMethodsOrder: ['facebook', 'google'],
+      appLogo: 'https://web3auth.io/images/w3a-L-Favicon-1.svg' // Your App Logo Here
+    }
+  });
+
+  const web3AuthConnect = async () => {
+    
+
+    const phantomAdapter = new PhantomAdapter({
+      clientId: "BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8",
+      sessionTime: 3600, // 1 hour in seconds
+      chainConfig: {
+        chainNamespace: CHAIN_NAMESPACES.SOLANA,
+        chainId: '0x2',
+        rpcTarget: "https://api.devnet.solana.com", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
+        displayName: "solana",
+        ticker: "SOL",
+        tickerName: "solana",
+        blockExplorer: ""
+      },
+    });
+    web3auth.configureAdapter(phantomAdapter);
+
+    await web3auth.initModal();
+    const safeEmitter = await web3auth.connect();
+
+    if (safeEmitter != null) {
+      const solanaWallet = new SolanaWallet(web3auth.provider);
+
+      if (solanaWallet != null) {
+        setSolanaWallet(solanaWallet);
+
+        // Get user's Solana public address
+        const accounts = await solanaWallet.requestAccounts();
+
+        const connectionConfig: any = await solanaWallet.request({
+          method: "solana_provider_config",
+          params: [],
+        });
+
+        const connection = new Connection(connectionConfig.rpcTarget);
+        const account1 = accounts[0];
+
+        if (account1 != null && account1.length > 0) {
+          setSigned(true);
+          console.log("IS connected, ", signedIn);
+        }
+
+        // Fetch the balance for the specified public key
+        const balance = await connection.getBalance(new PublicKey(account1));
+        console.log(`account1 = ${account1}`)
+        console.log("balance: , ", balance / LAMPORTS_PER_SOL)
+      }
+    }
+  }
+
+
+  // const solanaWallet = new SolanaWallet(this.web3auth.provider);
+
+
+  async function handleLoginClick() {
+    props.handleClose();
+    await web3AuthConnect();
+  }
+
+  async function handleLogoutClick() {
+    props.handleClose();
+
+    console.log(`Cached adapter: `, web3auth.cachedAdapter);
+    console.log(`Cached adapter name: `, web3auth.connectedAdapterName);
+    web3auth.clearCache();
+    // await web3auth.logout();
+
+    setSigned(false);
+    setSolanaWallet(null);
+    // web3auth.status;
+  }
+
+  // const isLoggedIn = this.state.isLoggedIn;
+  // const isNotReady = this.web3auth.status == 'not_ready';
+  let button: {};
+  if (signedIn) {
+    button = <LogoutButton onClick={handleLogoutClick} />;
+  } else {
+    button = <LoginButton onClick={handleLoginClick} />;
+  }
+  return (
+    <>
+      <div>
+        {button}
+      </div>
+    </>
+
+  );
+}
+
+function LoginButton(props: { onClick: MouseEventHandler<HTMLButtonElement>; }) {
+  return (
+    <Button color="primary" fullWidth onClick={props.onClick}>
+      <LockOpenTwoToneIcon sx={{ mr: 1 }} />
+      Login HE
+    </Button>
+  );
+}
+
+function LogoutButton(props: { onClick: MouseEventHandler<HTMLButtonElement>; }) {
+  return (
+    <Button color="primary" fullWidth onClick={props.onClick}>
+      <LockOpenTwoToneIcon sx={{ mr: 1 }} />
+      Logout
+    </Button>
+  );
+}
+
+const SIGN_IN = 'Sign in';
+const SIGN_OUT = 'Sign out';
 
 export default HeaderUserbox;
