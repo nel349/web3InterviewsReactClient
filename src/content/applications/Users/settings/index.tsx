@@ -1,16 +1,31 @@
-import { useState, ChangeEvent } from 'react';
+import { useState} from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Container, Tabs, Tab, Grid, Button, Divider } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Button, Divider } from '@mui/material';
 import CalendlyService from './calendly/services/calendlyService';
 import ZoomService, { ZOOM_AUTHENTICATION_URL } from './calendly/services/zoomService';
 import { useSearchParams } from 'react-router-dom';
 import AnchorClient from './solana/anchorClient';
-import AuthenticationProvider from './AuthenticationProvider';
-import { ComponentCount } from './ComponentCount';
+import { useAuthenticationContext } from './AuthenticationProvider';
 let BASE_URL = "https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=";
 
 function ManagementUserSettings() {
+  const { signedIn, setSigned} = useAuthenticationContext();
+
+  let activities: {};
+  if (signedIn) {
+    activities = <ActivitiesComponents />;
+  } else {
+    activities = <></>;
+  }
+
+  return (
+    <>
+      {activities}
+    </>
+  );
+}
+
+function ActivitiesComponents() {
 
   // Base64-urlencodes the input string
   function base64urlencode(str) {
@@ -21,7 +36,6 @@ function ManagementUserSettings() {
     return btoa(String.fromCharCode.apply(null, new Uint8Array(str)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
-
 
   // Calculate the SHA256 hash of the input text. 
   // Returns a promise that resolves to an ArrayBuffer
@@ -36,19 +50,6 @@ function ManagementUserSettings() {
     const hashed = await sha256(v);
     return base64urlencode(hashed);
   }
-
-  const [currentTab, setCurrentTab] = useState<string>('activity');
-
-  const tabs = [
-    { value: 'activity', label: 'Activity' },
-    { value: 'edit_profile', label: 'Edit Profile' },
-    { value: 'notifications', label: 'Notifications' },
-    { value: 'security', label: 'Passwords/Security' }
-  ];
-
-  const handleTabsChange = (event: ChangeEvent<{}>, value: string): void => {
-    setCurrentTab(value);
-  };
 
   const [searchParams,] = useSearchParams();
   const client = new AnchorClient();
@@ -100,7 +101,6 @@ function ManagementUserSettings() {
   const getChallengeFromVerifier = async () => {
 
     const codeChallenge = await pkceChallengeFromVerifier("CODE_CHALLENGE");
-    // BASE_URL = `https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=${codeChallenge}`;
 
     const urlWithChallenge = `${url}${codeChallenge}`;
     setUrl(urlWithChallenge);
@@ -142,66 +142,63 @@ function ManagementUserSettings() {
     const { access_token, refresh_token } = await ZoomService.getAccessToken(authorizationCode);
     console.log('accesstoken and refresh token: ', access_token, refresh_token)
   }
-
   return (
     <>
-        {/* <Helmet>
-          <title>User Settings - Applications</title>
-        </Helmet>
+      <Helmet>
+        <title>User Settings - Applications</title>
+      </Helmet>
 
-        <Button variant="contained" onClick={setupInterviewPrice} >
-          Initialize
-        </Button>
+      <Button variant="contained" onClick={setupInterviewPrice} >
+        Initialize
+      </Button>
 
-        <Button variant="contained" onClick={isAuthorizedToSlot} >
-          isAuthorizedToSlot?
-        </Button>
-        <Button variant="contained" onClick={completeGrant} >
-          CompleteGrant
-        </Button>
-        <Button variant="contained" onClick={pullBackGrant} >
-          PullBackGrant
-        </Button>
+      <Button variant="contained" onClick={isAuthorizedToSlot} >
+        isAuthorizedToSlot?
+      </Button>
+      <Button variant="contained" onClick={completeGrant} >
+        CompleteGrant
+      </Button>
+      <Button variant="contained" onClick={pullBackGrant} >
+        PullBackGrant
+      </Button>
 
-        <Divider sx={{ pb: 1 }} />
+    {/* 
+        Calendly
+     */}
+      <Divider sx={{ pb: 1 }} />
 
-        <Button variant="contained" onClick={getAccessToken} >
-          GetAccessToken
-        </Button>
+      <Button variant="contained" onClick={getAccessToken} >
+        GetAccessToken
+      </Button>
 
-        <Button variant="contained" onClick={getUserInfo} >
-          getUserInfo
-        </Button>
+      <Button variant="contained" onClick={getUserInfo} >
+        getUserInfo
+      </Button>
 
-        <Button variant="contained" onClick={getChallengeFromVerifier} >
-          generate code verifier
-        </Button>
+      <Button variant="contained" onClick={getChallengeFromVerifier} >
+        generate code verifier
+      </Button>
 
-        <Button variant="contained" onClick={getAccessTokenNative} >
-          getAccessTokenNative
-        </Button>
+      <Button variant="contained" onClick={getAccessTokenNative} >
+        getAccessTokenNative
+      </Button>
 
-        <Button variant="contained" onClick={getUserEventTypes} >
-          getUserEventTypes
-        </Button>
+      <Button variant="contained" onClick={getUserEventTypes} >
+        getUserEventTypes
+      </Button>
 
-        <Button variant="contained" onClick={createSingleUseSchedulingLink} >
-          createSingleUseSchedulingLink
-        </Button>
+      <Button variant="contained" onClick={createSingleUseSchedulingLink} >
+        createSingleUseSchedulingLink
+      </Button>
 
-        <Button href={url} > New Authorized Page </Button>
+      <Button href={url} > New Authorized Page </Button>
 
-        <Divider sx={{ pb: 1 }} />
-        <Button href={zoomAuthUrl} > New ZOOM Authorization Page </Button>
+      <Divider sx={{ pb: 1 }} />
+      <Button href={zoomAuthUrl} > New ZOOM Authorization Page </Button>
 
-        <Button variant="contained" onClick={getZoomAccessToken} >
-          Zoom access token
-        </Button>
-
-
-        <ComponentCount></ComponentCount>, */}
-      
-
+      <Button variant="contained" onClick={getZoomAccessToken} >
+        Zoom access token
+      </Button>
     </>
   );
 }

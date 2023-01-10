@@ -282,7 +282,7 @@ function SidebarMenu() {
                   disableRipple
                   component={RouterLink}
                   onClick={closeSidebar}
-                  to="/management/profile/settings"
+                  to="/free/sample-video-page"
                   startIcon={<DisplaySettingsTwoToneIcon />}
                 >
                   Account Settings

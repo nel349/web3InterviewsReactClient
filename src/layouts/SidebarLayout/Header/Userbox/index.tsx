@@ -134,7 +134,7 @@ function HeaderUserbox() {
           </ListItem>
           <ListItem
             button
-            to="/management/profile/settings"
+            to="/free/sample-video-page"
             component={NavLink}
           >
             <AccountTreeTwoToneIcon fontSize="small" />

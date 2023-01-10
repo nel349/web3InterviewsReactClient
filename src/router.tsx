@@ -171,7 +171,14 @@ const routes: RouteObject[] = [
   },
   {
     path: 'free/sample-video-page',
-    element: <UserSettings />
+    element: <SidebarLayout />,
+    children: [
+      {
+        path: '',
+        element: <UserSettings />
+      }
+    ]
+
   },
   {
     path: '/components',
