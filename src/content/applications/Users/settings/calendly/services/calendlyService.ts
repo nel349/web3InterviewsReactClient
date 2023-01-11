@@ -126,6 +126,15 @@ class CalendlyService {
     return data;
   };
 
+  getCurrentUserId = async () => {
+
+    const { uri } = await this.getUserInfo();
+     
+    //https://api.calendly.com/users/63848181-e703-486c-89c7-a1714bb6ad1b
+    const result = String(uri).split('/users/')[1];
+    return result;
+  }
+
   getUserEventTypes = async (userUri: any) => {
 
     var options = {

@@ -95,6 +95,8 @@ function ActivitiesComponents() {
 
     const userInfo = await calendlyService.getUserInfo();
 
+
+
     console.log("userInfo: ", userInfo);
   }
 
@@ -122,10 +124,12 @@ function ActivitiesComponents() {
 
   const getUserEventTypes = async () => {
 
-    // user URI: "https://api.calendly.com/users/a0a67082-f8d4-46f9-b837-9e484c722871"
+    // user URI: "https://api.calendly.com/users/63848181-e703-486c-89c7-a1714bb6ad1b"
+    //63848181-e703-486c-89c7-a1714bb6ad1b
 
     // organization URI: "https://api.calendly.com/organizations/3097f4c0-3519-4dde-8191-ddeabb0dacc2"
-    const eventTypes = await calendlyService.getUserEventTypes("a0a67082-f8d4-46f9-b837-9e484c722871");
+    const userUri = await calendlyService.getCurrentUserId()
+    const eventTypes = await calendlyService.getUserEventTypes(userUri);
 
     console.log("getUserEventTypes: ", eventTypes)
   }
