@@ -135,7 +135,11 @@ function ActivitiesComponents() {
   }
 
   const createSingleUseSchedulingLink = async () => {
-    const createSingleUseSchedulingLink = await calendlyService.createSingleUseSchedulingLink();
+    const userUri = await calendlyService.getCurrentUserId();
+    const a = await calendlyService.getCurrentProfileOwnerUri(userUri);
+
+    console.log("profile owner: ", a);
+    const createSingleUseSchedulingLink = await calendlyService.createSingleUseSchedulingLink(a);
 
     console.log("createSingleUseSchedulingLink: ", createSingleUseSchedulingLink)
   }

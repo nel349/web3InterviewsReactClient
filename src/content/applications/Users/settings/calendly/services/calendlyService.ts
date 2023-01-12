@@ -135,7 +135,14 @@ class CalendlyService {
     return result;
   }
 
-  getUserEventTypes = async (userUri: any) => {
+  // Get first in collection from event types in current profile
+  getCurrentProfileOwnerUri = async (userUri: string) => {
+    const { data: { collection } } = await this.getUserEventTypes(userUri);
+    const { uri } = collection[0];
+    return String(uri);
+  }
+
+  getUserEventTypes = async (userUri: string) => {
 
     var options = {
       method: 'GET',
@@ -163,7 +170,7 @@ class CalendlyService {
     return response;
   };
 
-  async createSingleUseSchedulingLink() {
+  async createSingleUseSchedulingLink(ownerUri: string) {
     const options = {
       method: 'POST',
       url: 'https://api.calendly.com/scheduling_links',
@@ -173,7 +180,7 @@ class CalendlyService {
       },
       data: {
         max_event_count: 1,
-        owner: 'https://api.calendly.com/event_types/460471ee-dfb4-4771-9b8b-30c3c4d3e3ff',
+        owner: ownerUri,
         owner_type: 'EventType'
       }
     };
@@ -185,9 +192,9 @@ class CalendlyService {
       console.error(error);
     };
 
-    console.log("event_types: ", response.data.resource);
-
-    return response;
+    const { booking_url } = response.data.resource
+    console.log("booking url: ", booking_url);
+    return String(booking_url);
   }
 
   getUserEventType = async (uuid: any) => {
