@@ -1,4 +1,4 @@
-import { useState} from 'react';
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button, Divider } from '@mui/material';
 import CalendlyService from './calendly/services/calendlyService';
@@ -6,10 +6,13 @@ import ZoomService, { ZOOM_AUTHENTICATION_URL } from './calendly/services/zoomSe
 import { useSearchParams } from 'react-router-dom';
 import AnchorClient from './solana/anchorClient';
 import { useAuthenticationContext } from './AuthenticationProvider';
+import { InlineWidget, PopupButton, PopupWidget } from "react-calendly";
+
 let BASE_URL = "https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=";
 
 function ManagementUserSettings() {
-  const { signedIn, setSigned} = useAuthenticationContext();
+  const { signedIn, setSigned } = useAuthenticationContext();
+  
 
   let activities: {};
   if (signedIn) {
@@ -57,6 +60,7 @@ function ActivitiesComponents() {
   let zoomService: ZoomService;
   const [url, setUrl] = useState(BASE_URL);
   const [zoomAuthUrl, setZoomAuthUrl] = useState(ZOOM_AUTHENTICATION_URL);
+  const [ calendlyScheduleUri, setCalendlyScheduleUri ] = useState("");
 
 
   const setupInterviewPrice = async () => {
@@ -92,11 +96,7 @@ function ActivitiesComponents() {
   }
 
   const getUserInfo = async () => {
-
     const userInfo = await calendlyService.getUserInfo();
-
-
-
     console.log("userInfo: ", userInfo);
   }
 
@@ -140,7 +140,7 @@ function ActivitiesComponents() {
 
     console.log("profile owner: ", a);
     const createSingleUseSchedulingLink = await calendlyService.createSingleUseSchedulingLink(a);
-
+    setCalendlyScheduleUri(createSingleUseSchedulingLink);
     console.log("createSingleUseSchedulingLink: ", createSingleUseSchedulingLink)
   }
 
@@ -170,7 +170,7 @@ function ActivitiesComponents() {
         PullBackGrant
       </Button>
 
-    {/* 
+      {/* 
         Calendly
      */}
       <Divider sx={{ pb: 1 }} />
@@ -207,6 +207,32 @@ function ActivitiesComponents() {
       <Button variant="contained" onClick={getZoomAccessToken} >
         Zoom access token
       </Button>
+
+      <InlineWidget url= { calendlyScheduleUri } />
+
+      <PopupWidget
+        url={calendlyScheduleUri}
+        /*
+         * react-calendly uses React's Portal feature (https://reactjs.org/docs/portals.html) to render the popup modal. As a result, you'll need to
+         * specify the rootElement property to ensure that the modal is inserted into the correct domNode.
+         */
+        rootElement={document.getElementById("root")}
+        text="Click here to schedule!"
+        textColor="#ffffff"
+        color="#00a2ff"
+      />
+
+      <PopupButton
+        url={ calendlyScheduleUri }
+        /*
+         * react-calendly uses React's Portal feature (https://reactjs.org/docs/portals.html) to render the popup modal. As a result, you'll need to
+         * specify the rootElement property to ensure that the modal is inserted into the correct domNode.
+         */
+        rootElement={document.getElementById("root")}
+        text="Click here to schedule!"
+      />
+
+
     </>
   );
 }
