@@ -7,13 +7,16 @@ import App from 'src/App';
 import { SidebarProvider } from 'src/contexts/SidebarContext';
 import * as serviceWorker from 'src/serviceWorker';
 import AuthenticationProvider from './content/applications/Users/settings/AuthenticationProvider';
+import { CookiesProvider } from "react-cookie";
 
 ReactDOM.render(
   <HelmetProvider>
     <SidebarProvider>
       <BrowserRouter>
         <AuthenticationProvider>
-          <App />
+          <CookiesProvider>
+            <App />
+          </CookiesProvider>
         </AuthenticationProvider>
       </BrowserRouter>
     </SidebarProvider>

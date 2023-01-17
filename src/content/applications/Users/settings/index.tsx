@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button, Divider } from '@mui/material';
 import CalendlyService from './calendly/services/calendlyService';
@@ -7,11 +7,12 @@ import { useSearchParams } from 'react-router-dom';
 import AnchorClient from './solana/anchorClient';
 import { useAuthenticationContext } from './AuthenticationProvider';
 import { InlineWidget, PopupButton, PopupWidget } from "react-calendly";
+import { useCookies } from 'react-cookie';
 
 let BASE_URL = "https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=";
 
 function ManagementUserSettings() {
-  const { signedIn, setSigned } = useAuthenticationContext();
+  const { signedIn } = useAuthenticationContext();
   
 
   let activities: {};
@@ -29,6 +30,32 @@ function ManagementUserSettings() {
 }
 
 function ActivitiesComponents() {
+
+  const [searchParams,] = useSearchParams();
+  const client = new AnchorClient();
+  // let calendlyService: CalendlyService;
+  let zoomService: ZoomService;
+  const [url, setUrl] = useState(BASE_URL);
+  const [zoomAuthUrl, setZoomAuthUrl] = useState(ZOOM_AUTHENTICATION_URL);
+  const [ calendlyScheduleUri, setCalendlyScheduleUri ] = useState("");
+  const [cookies, setCookie] = useCookies(['token']);
+  const [calendlyService, setCalendlyService] = useState<CalendlyService>(null);
+  
+
+
+  const saveAccessTokenCookie = (access_token:string) => {
+    console.log("setting Cookie: ", access_token);
+    setCookie("token", access_token, { path: '/' });
+  };
+
+  useEffect(() => {
+    console.log("use effect: Access token ", cookies.token)
+
+    const token = cookies.token;
+    if (token.length > 0) {
+      setCalendlyService(new CalendlyService(token));
+    }
+  }, [cookies]);
 
   // Base64-urlencodes the input string
   function base64urlencode(str) {
@@ -53,15 +80,6 @@ function ActivitiesComponents() {
     const hashed = await sha256(v);
     return base64urlencode(hashed);
   }
-
-  const [searchParams,] = useSearchParams();
-  const client = new AnchorClient();
-  let calendlyService: CalendlyService;
-  let zoomService: ZoomService;
-  const [url, setUrl] = useState(BASE_URL);
-  const [zoomAuthUrl, setZoomAuthUrl] = useState(ZOOM_AUTHENTICATION_URL);
-  const [ calendlyScheduleUri, setCalendlyScheduleUri ] = useState("");
-
 
   const setupInterviewPrice = async () => {
 
@@ -91,8 +109,9 @@ function ActivitiesComponents() {
 
     console.log("accessToken: ", access_token);
     console.log("refresh_token: ", refresh_token);
+    saveAccessTokenCookie(access_token);
 
-    calendlyService = new CalendlyService(access_token, refresh_token);
+    setCalendlyService(new CalendlyService(access_token, refresh_token));
   }
 
   const getUserInfo = async () => {
@@ -113,13 +132,14 @@ function ActivitiesComponents() {
   const getAccessTokenNative = async () => {
     const authorizationCode = searchParams.get("code");
     const { access_token, refresh_token } = await CalendlyService.getAccessTokenNative(authorizationCode);
-
+    
+    saveAccessTokenCookie(access_token);
     console.log("authorizationCode: ", authorizationCode);
 
     console.log("accessToken: ", access_token);
     console.log("refresh_token: ", refresh_token);
 
-    calendlyService = new CalendlyService(access_token, refresh_token);
+    setCalendlyService(new CalendlyService(access_token, refresh_token));
   }
 
   const getUserEventTypes = async () => {
@@ -198,6 +218,7 @@ function ActivitiesComponents() {
       <Button variant="contained" onClick={createSingleUseSchedulingLink} >
         createSingleUseSchedulingLink
       </Button>
+      <Button > {cookies.token} </Button>
 
       <Button href={url} > New Authorized Page </Button>
 
@@ -208,7 +229,7 @@ function ActivitiesComponents() {
         Zoom access token
       </Button>
 
-      <InlineWidget url= { calendlyScheduleUri } />
+      {/* <InlineWidget url= { calendlyScheduleUri } /> */}
 
       <PopupWidget
         url={calendlyScheduleUri}

@@ -9,14 +9,14 @@ const {
 } = process.env;
 
 class CalendlyService {
-  accessToken: any;
+  accessToken?: any;
    
   refreshToken: any;
    
   request: AxiosInstance;
 
   // requestInterceptor: any;
-  constructor(accessToken: any, refreshToken: any) {
+  constructor(accessToken?: any, refreshToken?: any) {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.request = axios.create({
@@ -103,6 +103,8 @@ class CalendlyService {
   }
 
   getUserInfo = async () => {
+
+    console.log('Current token: ', this.accessToken);
     const options = {
       method: 'GET',
       url: 'https://api.calendly.com/users/me',
