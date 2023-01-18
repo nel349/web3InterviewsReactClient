@@ -102,7 +102,7 @@ export default class AnchorClient {
     console.log('Interview price: ', state.interviewPrice.toString());
     console.log('Is authorized to reserve slot: ', state.isAuthorizedToReserveSlot.toString());
     
-    return true;
+    return state.isAuthorizedToReserveSlot;
   }
 
   completeGrant = async () => {

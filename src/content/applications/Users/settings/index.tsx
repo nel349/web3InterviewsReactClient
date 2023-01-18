@@ -222,7 +222,22 @@ function ActivitiesComponents() {
 
       <Button href={url} > New Authorized Page </Button>
 
+      <PopupButton
+        url={ calendlyScheduleUri }
+        /*
+         * react-calendly uses React's Portal feature (https://reactjs.org/docs/portals.html) to render the popup modal. As a result, you'll need to
+         * specify the rootElement property to ensure that the modal is inserted into the correct domNode.
+         */
+        rootElement={document.getElementById("root")}
+        text="Click here to schedule!"
+      />
+
       <Divider sx={{ pb: 1 }} />
+      {
+       /*
+       *  Zoom service calls
+       */
+      }
       <Button href={zoomAuthUrl} > New ZOOM Authorization Page </Button>
 
       <Button variant="contained" onClick={getZoomAccessToken} >
@@ -232,7 +247,7 @@ function ActivitiesComponents() {
       {/* <InlineWidget url= { calendlyScheduleUri } /> */}
 
       <PopupWidget
-        url={calendlyScheduleUri}
+        url={ calendlyScheduleUri }
         /*
          * react-calendly uses React's Portal feature (https://reactjs.org/docs/portals.html) to render the popup modal. As a result, you'll need to
          * specify the rootElement property to ensure that the modal is inserted into the correct domNode.
@@ -243,15 +258,7 @@ function ActivitiesComponents() {
         color="#00a2ff"
       />
 
-      <PopupButton
-        url={ calendlyScheduleUri }
-        /*
-         * react-calendly uses React's Portal feature (https://reactjs.org/docs/portals.html) to render the popup modal. As a result, you'll need to
-         * specify the rootElement property to ensure that the modal is inserted into the correct domNode.
-         */
-        rootElement={document.getElementById("root")}
-        text="Click here to schedule!"
-      />
+
 
 
     </>
