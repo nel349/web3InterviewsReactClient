@@ -1,5 +1,5 @@
 import * as anchor from '@project-serum/anchor';
-import { getProgramId } from './anchorClient';
+import { MySolanaProvider, getProgramId } from './anchorClient';
 import * as spl from '@solana/spl-token';
 import {
     MintLayout,
@@ -12,6 +12,9 @@ import {
 import { AccountInfo, Keypair } from '@solana/web3.js';
 import * as bs58 from "bs58";
 // import {BN} from 'bn.js';
+import { PublicKey, TransactionBlockhashCtor } from '@solana/web3.js';
+import { bg } from 'date-fns/locale';
+import { BN } from 'bn.js';
 
 interface PDAParameters {
     escrowWalletKey: anchor.web3.PublicKey,
@@ -22,7 +25,7 @@ interface PDAParameters {
 }
 
 let mintAddress: anchor.web3.PublicKey;
-let alice: anchor.web3.Keypair | undefined;
+let alice: Keypair;
 let aliceWallet: anchor.web3.PublicKey | undefined;
 let bob: anchor.web3.Keypair;
 // let pda: PDAParameters;
@@ -49,17 +52,23 @@ const getPdaParams = async (connection: anchor.web3.Connection, alice: anchor.we
     }
 }
 
-const createMint = async (provider: anchor.AnchorProvider): Promise<anchor.web3.PublicKey> => {
+const createMint = async (provider: MySolanaProvider): Promise<anchor.web3.PublicKey> => {
     const tokenMint = new anchor.web3.Keypair();
-    const lamportsForMint = await provider.connection.getMinimumBalanceForRentExemption(spl.MintLayout.span);
-    let tx = new anchor.web3.Transaction();
 
+    const connection = provider.connection
+    const lamportsForMint = await connection.getMinimumBalanceForRentExemption(spl.MintLayout.span);
+    const blockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
+
+    const b = {blockhash} as TransactionBlockhashCtor;    
+    let tx = new anchor.web3.Transaction(b);
+    const fromPubkey = await provider.wallet.getPublicKey();
+    
     // Allocate mint
     tx.add(
         anchor.web3.SystemProgram.createAccount({
             programId: spl.TOKEN_PROGRAM_ID,
             space: spl.MintLayout.span,
-            fromPubkey: provider.wallet.publicKey,
+            fromPubkey: fromPubkey,
             newAccountPubkey: tokenMint.publicKey,
             lamports: lamportsForMint,
         })
@@ -69,17 +78,24 @@ const createMint = async (provider: anchor.AnchorProvider): Promise<anchor.web3.
         createInitializeMintInstruction(
             tokenMint.publicKey,
             6,
-            provider.wallet.publicKey,
-            provider.wallet.publicKey
+            fromPubkey,
+            fromPubkey
         )
     );
-    const signature = await provider.sendAndConfirm(tx, [tokenMint]);
 
-    console.log(`[${tokenMint.publicKey}] Created new mint account at ${signature}`);
+    try {
+        const signature = await provider.sendAndConfirm(tx, [tokenMint]);
+        console.log("A ");
+        console.log(`[${tokenMint.publicKey}] Created new mint account at ${signature}`);
+    } catch (error) {
+        console.log("ERROR: ,", error)
+    }
+    
+
     return tokenMint.publicKey;
 }
 
-const createUserAndAssociatedWallet = async (provider: anchor.AnchorProvider, mint?: anchor.web3.PublicKey, useDefaultUser: boolean = true): Promise<[anchor.web3.Keypair, anchor.web3.PublicKey | undefined]> => {
+const createUserAndAssociatedWallet = async (provider: MySolanaProvider, mint?: anchor.web3.PublicKey, useDefaultUser: boolean = true): Promise<[anchor.web3.Keypair, anchor.web3.PublicKey | undefined]> => {
     let user: anchor.web3.Keypair; 
 
     if (useDefaultUser) {
@@ -161,12 +177,28 @@ export const readAccount = async (accountPublicKey: anchor.web3.PublicKey, provi
 }
 
 
-export const initilizeAccounts = async (provider: anchor.AnchorProvider) => {
+export const initilizeAccounts = async (provider: MySolanaProvider) => {
     mintAddress = await createMint(provider);
-    [alice, aliceWallet] = await createUserAndAssociatedWallet(provider, mintAddress);
+    
+    // [alice, aliceWallet] = await createUserAndAssociatedWallet(provider, mintAddress);
+
+    console.log("ABC ");
+
+    const privateKeyAlice = await provider.getPrivateKey();
+
+
+    console.log("bs58: ", privateKeyAlice);
+
+
+    const privateKey1Buffer = Buffer.from(privateKeyAlice, 'hex')
+
+    let secretKey = Uint8Array.from(privateKey1Buffer);
+
+    alice = Keypair.fromSecretKey(secretKey);
 
     let _rest;
     [bob, ..._rest] = await createUserAndAssociatedWallet(provider, undefined, false);
+
 
     const pda = await getPdaParams(provider.connection, alice.publicKey, bob.publicKey, mintAddress);
 
@@ -181,7 +213,7 @@ export const initilizeAccounts = async (provider: anchor.AnchorProvider) => {
     console.log('bob: ', bob.publicKey.toString());
 
     console.log('mintAddress: ', mintAddress.toString());
-    console.log('alice: ', alice.publicKey.toString());
+    console.log('alice: ', alice.toString());
     console.log('aliceWallet: ', aliceWallet.toString());
     console.log('provider account wallet key: ', provider.publicKey.toString());
 

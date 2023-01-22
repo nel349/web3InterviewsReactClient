@@ -2,15 +2,15 @@ import * as anchor from '@project-serum/anchor'; // includes https://solana-labs
 // const { SystemProgram } = anchor.web3; // Added to initialize account
 import idl from './target/idl/safe_pay.json';
 // import { WalletAdaptorPhantom } from './wallet-adapter-phantom';
-import { Idl, Program, Wallet } from '@project-serum/anchor';
+import { Idl, Program, Provider } from '@project-serum/anchor';
 import { SafePay } from './target/types/safe_pay';
-import { PublicKey, Keypair, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PublicKey, Keypair, Transaction, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 import { initilizeAccounts, readAccount } from './safePay'
 
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
-import * as bs58 from "bs58";
-import * as spl from '@solana/spl-token';
-import assert from 'assert';
+import { SolanaWallet } from "@web3auth/solana-provider";
+
+import { Wallet } from "@project-serum/anchor/dist/cjs/provider"
 
 interface PDAParameters {
   escrowWalletKey: anchor.web3.PublicKey,
@@ -35,37 +35,41 @@ export default class AnchorClient {
 
   connection: anchor.web3.Connection | undefined;
 
-  provider: anchor.AnchorProvider;
+  walletProvider:  MySolanaProvider;
 
   program: Program<SafePay>;
 
   initializedAccounts: TempParameters;
 
-  constructor() {
-    this.provider = getProvider();
-    this.program = getProgram();
+  constructor(walletProvider: MySolanaProvider) {
 
-    console.log(this.provider);
+
+    this.walletProvider = walletProvider;
+
+    // this.provider = getProvider();
+
+    const mySolanaProvider = new MySolanaProvider(walletProvider.connection, walletProvider.wallet);
+
+    this.program = getProgram(mySolanaProvider);
+
+    console.log("My Solana wallet provider: ", this.walletProvider.wallet.solanaWallet);
     // this.program = new anchor.Program.at(this.programId, this.provider);
   }
 
   async initialize() {
     // generate an address (PublciKey) for this new account
-    console.log("Initializing accounts");
-
+    console.log("1. Initializing accounts");
 
     //Fund account
-    const connection = this.provider.connection;
-    const account = this.provider.publicKey;
-    const airdropSignature = await connection.requestAirdrop(
-      account,
-      60 * LAMPORTS_PER_SOL
-    );
+    const connection = this.walletProvider.connection;
+    const account = await this.walletProvider.getPublicKey();
 
-    await connection.confirmTransaction(airdropSignature);
-    this.initializedAccounts = await initilizeAccounts(this.provider);
+    let blockhash = (await connection.getLatestBlockhash('finalized')).blockhash;
+    console.log("Last blockhast: ", blockhash);
 
-    console.log(`Initializing accounts: `, this.initializedAccounts);
+    this.initializedAccounts = await initilizeAccounts(this.walletProvider);
+
+    console.log(`2. Initialized accounts: `, this.initializedAccounts);
     return this.initializedAccounts;
   }
 
@@ -189,21 +193,21 @@ export default class AnchorClient {
   }
 }
 // create a network and wallet context provider
-const getProvider = () => {
-  const httpUri = 'http://localhost:8899';
-  const connection = new anchor.web3.Connection(httpUri, 'confirmed');
+// const getProvider = () => {
+//   const httpUri = 'http://localhost:8899';
+//   const connection = new anchor.web3.Connection(httpUri, 'confirmed');
 
-  const bs58StringKey = bs58.decode("54uBa2M37Sn8NHWmyQpeQ1NJfKT1VVuF9HdNHZgCunht4UaKL6LfHGKM2kBqtXgV8VTeJ7rTbKJXdysbQ8GtSZUb");
-  const userKey = Keypair.fromSecretKey(bs58StringKey);
-  const wallet = new MyWallet(userKey);
-  const provider = new anchor.AnchorProvider(connection, wallet, {
-    preflightCommitment: "confirmed",
-  });
-  return provider;
-};
+//   const bs58StringKey = bs58.decode("54uBa2M37Sn8NHWmyQpeQ1NJfKT1VVuF9HdNHZgCunht4UaKL6LfHGKM2kBqtXgV8VTeJ7rTbKJXdysbQ8GtSZUb");
+//   const userKey = Keypair.fromSecretKey(bs58StringKey);
+//   const wallet = new MyWallet(userKey);
+//   const provider = new anchor.AnchorProvider(connection, wallet, {
+//     preflightCommitment: "confirmed",
+//   });
+//   return provider;
+// };
 
 // helper function to get the program
-const getProgram = () => {
+const getProgram = (provider: MySolanaProvider) => {
 
   // get program id from IDL, the metadata is only available after a deployment
   const programID = getProgramId();
@@ -213,7 +217,7 @@ const getProgram = () => {
   const program = new Program(
     idl as Idl,
     programID,
-    getProvider()
+    provider,
   ) as unknown as Program<SafePay>;
   return program;
 };
@@ -242,4 +246,87 @@ export class MyWallet implements Wallet {
   get publicKey(): PublicKey {
     return this.payer.publicKey;
   }
+}
+
+export class MySolanaWallet implements Wallet {
+
+  connection: Connection;
+
+  solanaWallet: SolanaWallet;
+
+  publicKey: PublicKey;
+
+  constructor(solanaWallet: SolanaWallet, connection: Connection) {
+    this.connection = connection;
+    this.solanaWallet = solanaWallet;
+  }
+
+  signTransaction(tx: Transaction): Promise<Transaction> {
+    return this.solanaWallet.signTransaction(tx);
+  }
+
+  signAllTransactions(txs: Transaction[]): Promise<Transaction[]> {
+    return this.solanaWallet.signAllTransactions(txs);
+  }
+
+  // Get the first public key in solana wallet accounts.
+  async getPublicKey(): Promise<PublicKey> {
+    const accounts = await this.accounts();
+    return new PublicKey(accounts[0]);
+  }
+
+  async accounts(): Promise<string[]> {
+    return await this.solanaWallet.requestAccounts();
+  }
+
+  //Assuming user is already logged in.
+  async getPrivateKey() {
+    const privateKey: any = await this.solanaWallet.request({
+      method: "solanaPrivateKey"
+    });
+    return String(privateKey);
+  }
+}
+
+export class MySolanaProvider implements Provider {
+
+  wallet: MySolanaWallet;
+
+  connection: anchor.web3.Connection;
+
+  publicKey?: anchor.web3.PublicKey;
+
+  constructor(connection: Connection, wallet: MySolanaWallet) {
+    this.connection = connection;
+    this.wallet = wallet;
+  }
+
+  async getPublicKey(): Promise<PublicKey> {
+    return await this.wallet.getPublicKey();
+  }
+
+  async getPrivateKey(): Promise<string> {
+    return await this.wallet.getPrivateKey();
+  }
+
+  async send(tx: anchor.web3.Transaction,
+        signers?: anchor.web3.Signer[],
+        opts?: anchor.web3.SendOptions): Promise<string> {
+          const wallet  = this.wallet.solanaWallet;
+          const { signature } = await wallet.signAndSendTransaction(tx);
+          return signature;
+  }
+
+  async sendAndConfirm(tx: anchor.web3.Transaction, signers?: anchor.web3.Signer[], opts?: anchor.web3.ConfirmOptions): Promise<string>{
+    const wallet  = this.wallet.solanaWallet;
+    const { signature } = await wallet.signAndSendTransaction(tx);
+    return signature;
+  }
+  async sendAll?(txWithSigners: { tx: anchor.web3.Transaction; signers?: anchor.web3.Signer[]; }[], opts?: anchor.web3.ConfirmOptions): Promise<string[]>{
+    // const wallet  = this.wallet.solanaWallet;
+    // const { signature } = await wallet.send);
+    return new Promise<string[]>(null);
+  }
+  simulate?(tx: anchor.web3.Transaction, signers?: anchor.web3.Signer[], commitment?: anchor.web3.Commitment, includeAccounts?: boolean | anchor.web3.PublicKey[]): Promise<anchor.utils.rpc.SuccessfulTxSimulationResponse>;
+
 }

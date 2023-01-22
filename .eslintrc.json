@@ -5,7 +5,6 @@
   },
   "extends": [
     "plugin:react/recommended",
-    "airbnb-typescript",
     "plugin:react/jsx-runtime",
     "plugin:prettier/recommended"
   ],

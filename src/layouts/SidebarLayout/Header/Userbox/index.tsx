@@ -29,6 +29,9 @@ import { SolanaWallet } from "@web3auth/solana-provider";
 import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { useAuthenticationContext } from "../../../../content/applications/Users/settings/AuthenticationProvider";
 import { PhantomAdapter } from "@web3auth/phantom-adapter";
+import { AnchorProvider } from '@project-serum/anchor';
+import { useCookies } from 'react-cookie';
+import { MySolanaProvider, MySolanaWallet } from 'src/content/applications/Users/settings/solana/anchorClient';
 
 const UserBoxButton = styled(Button)(
   ({ theme }) => `
@@ -74,7 +77,7 @@ function HeaderUserbox() {
 
   const ref = useRef<any>(null);
   const [isOpen, setOpen] = useState<boolean>(false);
-  const [isConnected, setConnected] = useState<boolean>(false);
+  // const [isConnected, setConnected] = useState<boolean>(false);
 
   const handleOpen = (): void => {
     setOpen(true);
@@ -152,8 +155,8 @@ function HeaderUserbox() {
 
 function LoginControl(props: any) {
 
-  const { signedIn, setSigned } = useAuthenticationContext();
-  const [solanaWallet, setSolanaWallet] = useState<SolanaWallet>();
+  const { signedIn, setSigned, setSolanaProvider } = useAuthenticationContext();
+  // const [solanaWallet, setSolanaWallet] = useState<MySolanaWallet>();
 
   let web3auth = new Web3Auth({
     clientId: 'BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8',
@@ -174,13 +177,15 @@ function LoginControl(props: any) {
 
   const web3AuthConnect = async () => {
     
+    //http://127.0.0.1:8899 localnet
+    // https://api.devnet.solana.com devnet
 
     const phantomAdapter = new PhantomAdapter({
       clientId: "BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8",
       sessionTime: 3600, // 1 hour in seconds
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.SOLANA,
-        chainId: '0x2',
+        chainId: '0x3', // Please use 0x1 for Mainnet, 0x2 for Testnet, 0x3 for Devnet
         rpcTarget: "https://api.devnet.solana.com", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
         displayName: "solana",
         ticker: "SOL",
@@ -197,11 +202,9 @@ function LoginControl(props: any) {
       const solanaWallet = new SolanaWallet(web3auth.provider);
 
       if (solanaWallet != null) {
-        setSolanaWallet(solanaWallet);
-
+// 
         // Get user's Solana public address
         const accounts = await solanaWallet.requestAccounts();
-
         const connectionConfig: any = await solanaWallet.request({
           method: "solana_provider_config",
           params: [],
@@ -212,6 +215,10 @@ function LoginControl(props: any) {
 
         if (account1 != null && account1.length > 0) {
           setSigned(true);
+
+          const mySolanaWallet = new MySolanaWallet(solanaWallet, connection);
+
+          setSolanaProvider(new MySolanaProvider(connection, mySolanaWallet));
           console.log("IS connected, ", signedIn);
         }
 
@@ -238,15 +245,12 @@ function LoginControl(props: any) {
     console.log(`Cached adapter: `, web3auth.cachedAdapter);
     console.log(`Cached adapter name: `, web3auth.connectedAdapterName);
     web3auth.clearCache();
-    // await web3auth.logout();
 
     setSigned(false);
-    setSolanaWallet(null);
-    // web3auth.status;
+    setSolanaProvider(null);
+    // setSolanaWallet(null);
   }
 
-  // const isLoggedIn = this.state.isLoggedIn;
-  // const isNotReady = this.web3auth.status == 'not_ready';
   let button: {};
   if (signedIn) {
     button = <LogoutButton onClick={handleLogoutClick} />;
@@ -280,8 +284,4 @@ function LogoutButton(props: { onClick: MouseEventHandler<HTMLButtonElement>; })
     </Button>
   );
 }
-
-const SIGN_IN = 'Sign in';
-const SIGN_OUT = 'Sign out';
-
 export default HeaderUserbox;

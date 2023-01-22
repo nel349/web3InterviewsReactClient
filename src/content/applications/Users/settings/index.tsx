@@ -4,7 +4,7 @@ import { Button, Divider } from '@mui/material';
 import CalendlyService from './calendly/services/calendlyService';
 import ZoomService, { ZOOM_AUTHENTICATION_URL } from './calendly/services/zoomService';
 import { useSearchParams } from 'react-router-dom';
-import AnchorClient from './solana/anchorClient';
+import AnchorClient, { MySolanaProvider } from './solana/anchorClient';
 import { useAuthenticationContext } from './AuthenticationProvider';
 import { InlineWidget, PopupButton, PopupWidget } from "react-calendly";
 import { useCookies } from 'react-cookie';
@@ -32,7 +32,7 @@ function ManagementUserSettings() {
 function ActivitiesComponents() {
 
   const [searchParams,] = useSearchParams();
-  const client = new AnchorClient();
+  let client: AnchorClient;
   // let calendlyService: CalendlyService;
   let zoomService: ZoomService;
   const [url, setUrl] = useState(BASE_URL);
@@ -40,6 +40,7 @@ function ActivitiesComponents() {
   const [ calendlyScheduleUri, setCalendlyScheduleUri ] = useState("");
   const [cookies, setCookie] = useCookies(['token']);
   const [calendlyService, setCalendlyService] = useState<CalendlyService>(null);
+  const { solanaProvider } = useAuthenticationContext();
   
 
 
@@ -50,7 +51,6 @@ function ActivitiesComponents() {
 
   useEffect(() => {
     console.log("use effect: Access token ", cookies.token)
-
     const token = cookies.token;
     if (token.length > 0) {
       setCalendlyService(new CalendlyService(token));
@@ -82,8 +82,15 @@ function ActivitiesComponents() {
   }
 
   const setupInterviewPrice = async () => {
+    const publicKey = await solanaProvider?.getPublicKey();
+    const privateKey = await solanaProvider?.getPrivateKey();
+    
+    // const tobs58 = bs58.encode(privateKey)
+    console.log("solana provider account 0: ", publicKey.toString())
+    console.log("solana provider account 0 secretKey: ", privateKey)
 
-    await client.initialize();
+    client = new AnchorClient(solanaProvider);
+    await client?.initialize();
     await client.initializeSafePaymentBy();
   }
 
@@ -100,6 +107,9 @@ function ActivitiesComponents() {
     await client.pullBackFunds();
   }
 
+  /*
+  * Calendly service calls
+  */
   const getAccessToken = async () => {
 
     const authorizationCode = searchParams.get("code");
@@ -170,6 +180,7 @@ function ActivitiesComponents() {
     const { access_token, refresh_token } = await ZoomService.getAccessToken(authorizationCode);
     console.log('accesstoken and refresh token: ', access_token, refresh_token)
   }
+
   return (
     <>
       <Helmet>
@@ -258,6 +269,9 @@ function ActivitiesComponents() {
         color="#00a2ff"
       />
 
+      <Button variant="contained" onClick={getUserEventTypes} >
+        getUserEventTypes
+      </Button>
 
 
 
