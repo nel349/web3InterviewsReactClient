@@ -25,7 +25,7 @@ interface PDAParameters {
 }
 
 let mintAddress: anchor.web3.PublicKey;
-let alice: Keypair;
+// let alice: Keypair;
 let aliceWallet: anchor.web3.PublicKey | undefined;
 let bob: anchor.web3.Keypair;
 // let pda: PDAParameters;
@@ -58,10 +58,15 @@ const createMint = async (provider: MySolanaProvider): Promise<anchor.web3.Publi
     const connection = provider.connection
     const lamportsForMint = await connection.getMinimumBalanceForRentExemption(spl.MintLayout.span);
     const blockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
-
-    const b = {blockhash} as TransactionBlockhashCtor;    
-    let tx = new anchor.web3.Transaction(b);
     const fromPubkey = await provider.wallet.getPublicKey();
+
+    console.log("Last blockhast: ", blockhash);
+
+    // const b = {blockhash} as TransactionBlockhashCtor;    
+    let tx = new anchor.web3.Transaction();
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = fromPubkey;
+   
     
     // Allocate mint
     tx.add(
@@ -84,7 +89,26 @@ const createMint = async (provider: MySolanaProvider): Promise<anchor.web3.Publi
     );
 
     try {
-        const signature = await provider.sendAndConfirm(tx, [tokenMint]);
+
+        // const adsf = tokenMint as Signer;
+
+        tx.partialSign(tokenMint)
+        
+
+        const signedTx = await provider.wallet.signTransaction(tx);
+
+        // const anchorProvider = new anchor.AnchorProvider(connection, provider.wallet, {
+        //     preflightCommitment: "confirmed",
+        // });
+
+
+        const signature = await provider.wallet.connection.sendRawTransaction(signedTx.serialize());
+
+        // provider.wallet.solanaWallet.signTransaction
+
+        // anchorProvider.wallet.signTransaction
+
+        // const sSignature = await anchorProvider.sendAndConfirm(tx, [tokenMint]);
         console.log("A ");
         console.log(`[${tokenMint.publicKey}] Created new mint account at ${signature}`);
     } catch (error) {
@@ -107,16 +131,24 @@ const createUserAndAssociatedWallet = async (provider: MySolanaProvider, mint?: 
 
     
     let userAssociatedTokenAccount: anchor.web3.PublicKey | undefined = undefined;
+    const connection = provider.connection;
+    const blockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
+    const fromPubkey = await provider.wallet.getPublicKey();
 
     // Fund user with some SOL
     let txFund = new anchor.web3.Transaction();
+    txFund.recentBlockhash = blockhash;
+    txFund.feePayer = fromPubkey;
+
     txFund.add(anchor.web3.SystemProgram.transfer({
-        fromPubkey: provider.wallet.publicKey,
+        fromPubkey: fromPubkey,
         toPubkey: user.publicKey,
-        lamports: 20 * anchor.web3.LAMPORTS_PER_SOL,
+        lamports: 0.05 * anchor.web3.LAMPORTS_PER_SOL,
     }));
     const sigTxFund = await provider.sendAndConfirm(txFund);
     console.log(`[${user.publicKey.toBase58()}] Funded new account with 5 SOL: ${sigTxFund}`);
+
+
 
     if (mint) {
         // Create a token account for the user and mint some tokens
@@ -140,7 +172,7 @@ const createUserAndAssociatedWallet = async (provider: MySolanaProvider, mint?: 
         txFundTokenAccount.add(createMintToInstruction(
             mint,
             userAssociatedTokenAccount,
-            provider.wallet.publicKey,
+            fromPubkey,
             1337000000,
             [],
             spl.TOKEN_PROGRAM_ID
@@ -148,8 +180,10 @@ const createUserAndAssociatedWallet = async (provider: MySolanaProvider, mint?: 
 
         console.log("Mint account: ", mint.toString());
         console.log("userAssociatedTokenAccount account: ", userAssociatedTokenAccount.toString());
-        console.log("provider.wallet.publicKey account: ", provider.wallet.publicKey.toString());
+        console.log("provider.wallet.publicKey account: ", fromPubkey);
         console.log("user account: ", user.publicKey.toString());
+        txFundTokenAccount.recentBlockhash = blockhash;
+        txFundTokenAccount.feePayer = fromPubkey;
         const txFundTokenSig = await provider.sendAndConfirm(txFundTokenAccount, [user]);
         console.log(`[${userAssociatedTokenAccount.toBase58()}] New associated account for mint ${mint.toBase58()}: ${txFundTokenSig}`);
     }
@@ -180,27 +214,38 @@ export const readAccount = async (accountPublicKey: anchor.web3.PublicKey, provi
 export const initilizeAccounts = async (provider: MySolanaProvider) => {
     mintAddress = await createMint(provider);
     
-    // [alice, aliceWallet] = await createUserAndAssociatedWallet(provider, mintAddress);
+    [, aliceWallet] = await createUserAndAssociatedWallet(provider, mintAddress);
 
-    console.log("ABC ");
+    
 
-    const privateKeyAlice = await provider.getPrivateKey();
-
-
-    console.log("bs58: ", privateKeyAlice);
+    // const privateKeyAlice = await provider.getPrivateKey();
 
 
-    const privateKey1Buffer = Buffer.from(privateKeyAlice, 'hex')
+    // console.log("bs58: ", privateKeyAlice);
 
-    let secretKey = Uint8Array.from(privateKey1Buffer);
 
-    alice = Keypair.fromSecretKey(secretKey);
+    // const privateKey1Buffer = Buffer.from(privateKeyAlice, 'hex')
+
+    // let secretKey = Uint8Array.from(privateKey1Buffer);
+
+    // alice = Keypair.fromSecretKey(secretKey);
 
     let _rest;
-    [bob, ..._rest] = await createUserAndAssociatedWallet(provider, undefined, false);
+
+    try {
+        [bob, ..._rest] = await createUserAndAssociatedWallet(provider, undefined, false);
+    } catch (error) {
+
+        console.log(error);
+    }
+    
+
+    
+
+    const alicePubKey = await provider.getPublicKey();
 
 
-    const pda = await getPdaParams(provider.connection, alice.publicKey, bob.publicKey, mintAddress);
+    const pda = await getPdaParams(provider.connection, alicePubKey, bob.publicKey, mintAddress);
 
     console.log('Initialized PDA:', pda)
 
@@ -213,13 +258,12 @@ export const initilizeAccounts = async (provider: MySolanaProvider) => {
     console.log('bob: ', bob.publicKey.toString());
 
     console.log('mintAddress: ', mintAddress.toString());
-    console.log('alice: ', alice.toString());
+    // console.log('alice: ', alice.toString());
     console.log('aliceWallet: ', aliceWallet.toString());
-    console.log('provider account wallet key: ', provider.publicKey.toString());
+    console.log('provider account wallet key: ', (await provider.getPublicKey()).toString());
 
     return {
         mintAddress,
-        alice,
         aliceWallet,
         bob,
         pda,

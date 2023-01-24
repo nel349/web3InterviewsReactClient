@@ -3,6 +3,197 @@ export type SafePay = {
   "name": "safe_pay",
   "instructions": [
     {
+      "name": "pullbackInstructions",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "refundWallet",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "withdrawPayment",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "walletToDepositTo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "candidate",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "setZoomMeetingId",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "meetingId",
+          "type": "string"
+        },
+        {
+          "name": "addedTime",
+          "type": "i64"
+        }
+      ]
+    },
+    {
       "name": "initializeNewGrant",
       "accounts": [
         {
@@ -108,6 +299,18 @@ export type SafePay = {
           {
             "name": "isAuthorizedToReserveSlot",
             "type": "bool"
+          },
+          {
+            "name": "zoomMeetingId",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "candidateEligibilityTimestamp",
+            "type": "i64"
           }
         ]
       }
@@ -161,6 +364,197 @@ export const IDL: SafePay = {
   "name": "safe_pay",
   "instructions": [
     {
+      "name": "pullbackInstructions",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "refundWallet",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "withdrawPayment",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowWalletState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "walletToDepositTo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "candidate",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "walletBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "setZoomMeetingId",
+      "accounts": [
+        {
+          "name": "applicationState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recruiter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "candidate",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintOfTokenBeingSent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "applicationIdx",
+          "type": "u64"
+        },
+        {
+          "name": "stateBump",
+          "type": "u8"
+        },
+        {
+          "name": "meetingId",
+          "type": "string"
+        },
+        {
+          "name": "addedTime",
+          "type": "i64"
+        }
+      ]
+    },
+    {
       "name": "initializeNewGrant",
       "accounts": [
         {
@@ -266,6 +660,18 @@ export const IDL: SafePay = {
           {
             "name": "isAuthorizedToReserveSlot",
             "type": "bool"
+          },
+          {
+            "name": "zoomMeetingId",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "candidateEligibilityTimestamp",
+            "type": "i64"
           }
         ]
       }

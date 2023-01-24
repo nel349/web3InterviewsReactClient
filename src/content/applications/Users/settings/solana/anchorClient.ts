@@ -11,6 +11,7 @@ import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { SolanaWallet } from "@web3auth/solana-provider";
 
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider"
+import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 
 interface PDAParameters {
   escrowWalletKey: anchor.web3.PublicKey,
@@ -22,7 +23,6 @@ interface PDAParameters {
 
 interface TempParameters {
   mintAddress: anchor.web3.PublicKey,
-  alice: anchor.web3.Keypair,
   aliceWallet: anchor.web3.PublicKey,
   bob: anchor.web3.Keypair,
   pda: PDAParameters
@@ -51,6 +51,7 @@ export default class AnchorClient {
     const mySolanaProvider = new MySolanaProvider(walletProvider.connection, walletProvider.wallet);
 
     this.program = getProgram(mySolanaProvider);
+    this.connection = this.walletProvider.connection;
 
     console.log("My Solana wallet provider: ", this.walletProvider.wallet.solanaWallet);
     // this.program = new anchor.Program.at(this.programId, this.provider);
@@ -62,10 +63,10 @@ export default class AnchorClient {
 
     //Fund account
     const connection = this.walletProvider.connection;
-    const account = await this.walletProvider.getPublicKey();
+    // const account = await this.walletProvider.getPublicKey();
 
-    let blockhash = (await connection.getLatestBlockhash('finalized')).blockhash;
-    console.log("Last blockhast: ", blockhash);
+    // let blockhash = (await connection.getLatestBlockhash('finalized')).blockhash;
+    
 
     this.initializedAccounts = await initilizeAccounts(this.walletProvider);
 
@@ -77,24 +78,64 @@ export default class AnchorClient {
 
     const amount = new anchor.BN(20000000);
 
-    await this.program.rpc.initializeNewGrant(
+    const wallet = this.walletProvider.wallet.solanaWallet;
+    
+    const pubkey = await this.walletProvider.getPublicKey();
+
+    // const a = await this.program.rpc.initializeNewGrant(
+    //   this.initializedAccounts.pda.idx,
+    //   this.initializedAccounts.pda.stateBump,
+    //   this.initializedAccounts.pda.escrowBump,
+    //   amount, {
+    //   accounts: {
+    //     applicationState: this.initializedAccounts.pda.stateKey,
+    //     escrowWalletState: this.initializedAccounts.pda.escrowWalletKey,
+    //     mintOfTokenBeingSent: this.initializedAccounts.mintAddress,
+    //     recruiter: this.initializedAccounts.alice.publicKey,
+    //     candidate: this.initializedAccounts.bob.publicKey,
+    //     walletToWithdrawFrom: this.initializedAccounts.aliceWallet,
+    //     systemProgram: anchor.web3.SystemProgram.programId,
+    //     rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+    //     tokenProgram: TOKEN_PROGRAM_ID,
+    //   },
+    //   signers: [this.initializedAccounts.alice],
+    // });
+
+
+    const tx = this.program.transaction.initializeNewGrant(
       this.initializedAccounts.pda.idx,
       this.initializedAccounts.pda.stateBump,
       this.initializedAccounts.pda.escrowBump,
-      amount, {
-      accounts: {
-        applicationState: this.initializedAccounts.pda.stateKey,
-        escrowWalletState: this.initializedAccounts.pda.escrowWalletKey,
-        mintOfTokenBeingSent: this.initializedAccounts.mintAddress,
-        recruiter: this.initializedAccounts.alice.publicKey,
-        candidate: this.initializedAccounts.bob.publicKey,
-        walletToWithdrawFrom: this.initializedAccounts.aliceWallet,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-      signers: [this.initializedAccounts.alice],
-    });
+      amount, 
+      {
+        accounts: {
+          applicationState: this.initializedAccounts.pda.stateKey,
+          escrowWalletState: this.initializedAccounts.pda.escrowWalletKey,
+          mintOfTokenBeingSent: this.initializedAccounts.mintAddress,
+          recruiter: pubkey,
+          candidate: this.initializedAccounts.bob.publicKey,
+          walletToWithdrawFrom: this.initializedAccounts.aliceWallet,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        }
+      }
+    );
+
+    const blockhash = (await this.connection.getLatestBlockhash("finalized")).blockhash;
+
+    console.log("Blockhash in initializeSafePaymentBy method: ", blockhash)
+
+    tx.feePayer = pubkey;
+    tx.recentBlockhash = blockhash;
+
+    const signed: any = await wallet.signTransaction(tx);
+
+    const txsignature = await this.connection.sendRawTransaction(signed.serialize())
+
+    const signatureResult = await this.connection.confirmTransaction(txsignature);
+    console.log("TxID: ", txsignature);
+    console.log("signatureResult: ", signatureResult)
 
     console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
   }

@@ -83,11 +83,11 @@ function ActivitiesComponents() {
 
   const setupInterviewPrice = async () => {
     const publicKey = await solanaProvider?.getPublicKey();
-    const privateKey = await solanaProvider?.getPrivateKey();
+    // const privateKey = await solanaProvider?.getPrivateKey();
     
     // const tobs58 = bs58.encode(privateKey)
     console.log("solana provider account 0: ", publicKey.toString())
-    console.log("solana provider account 0 secretKey: ", privateKey)
+    // console.log("solana provider account 0 secretKey: ", privateKey)
 
     client = new AnchorClient(solanaProvider);
     await client?.initialize();
