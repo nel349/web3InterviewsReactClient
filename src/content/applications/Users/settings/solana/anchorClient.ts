@@ -146,15 +146,19 @@ export default class AnchorClient {
     const state = await this.program.account.state.fetch(this.initializedAccounts.pda.stateKey);
 
     console.log('Interview price: ', state.interviewPrice.toString());
-    console.log('Is authorized to reserve slot: ', state.isAuthorizedToReserveSlot.toString());
-
-    // const recruiter = state.recruiter;
-    // const currentAccountPubKey = await this.walletProvider.getPublicKey();
-    // const accountsMatch = recruiter.toString() == currentAccountPubKey.toString();
-
-    // console.log("Accounts match: ", accountsMatch);
     
-    return false;
+
+    const recruiter = state.recruiter;
+    const currentAccountPubKey = await this.walletProvider.getPublicKey();
+    const accountsMatch = recruiter.toString() == currentAccountPubKey.toString();
+
+
+    const result = state.isAuthorizedToReserveSlot && accountsMatch;
+
+    console.log("Accounts match: ", accountsMatch);
+    console.log('Is authorized to reserve slot: ', result);
+    
+    return result;
   }
 
   completeGrant = async () => {
