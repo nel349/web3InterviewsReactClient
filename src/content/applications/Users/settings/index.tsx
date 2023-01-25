@@ -81,7 +81,7 @@ function ActivitiesComponents() {
     return base64urlencode(hashed);
   }
 
-  const setupInterviewPrice = async () => {
+  const initializeAccounts = async () => {
     const publicKey = await solanaProvider?.getPublicKey();
     // const privateKey = await solanaProvider?.getPrivateKey();
     
@@ -91,11 +91,18 @@ function ActivitiesComponents() {
 
     client = new AnchorClient(solanaProvider);
     await client?.initialize();
+  }
+
+  const setupInterviewPrice = async () => {
     await client.initializeSafePaymentBy();
   }
 
   const isAuthorizedToSlot = async () => {
-    await client.isAuthorizedToSlot();
+    try {
+      await client.isAuthorizedToSlot();
+    } catch (error) {
+      console.log(error);
+    } 
   }
 
   const completeGrant = async () => {
@@ -187,6 +194,9 @@ function ActivitiesComponents() {
         <title>User Settings - Applications</title>
       </Helmet>
 
+      <Button variant="contained" onClick={initializeAccounts} >
+        Initialize Accounts
+      </Button>
       <Button variant="contained" onClick={setupInterviewPrice} >
         Initialize
       </Button>

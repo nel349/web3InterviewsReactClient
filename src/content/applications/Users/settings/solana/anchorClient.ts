@@ -129,13 +129,14 @@ export default class AnchorClient {
     tx.feePayer = pubkey;
     tx.recentBlockhash = blockhash;
 
-    const signed: any = await wallet.signTransaction(tx);
+    const signed = await wallet.signTransaction(tx);
+    console.log("Serialized message: ", signed.serialize().toString("base64"));
 
-    const txsignature = await this.connection.sendRawTransaction(signed.serialize())
+    const txsignature = await this.connection.sendRawTransaction(signed.serialize());
 
-    const signatureResult = await this.connection.confirmTransaction(txsignature);
+    // const signatureResult = await this.connection.confirmTransaction(txsignature);
     console.log("TxID: ", txsignature);
-    console.log("signatureResult: ", signatureResult)
+    // console.log("signatureResult: ", signatureResult)
 
     console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
   }
@@ -146,8 +147,14 @@ export default class AnchorClient {
 
     console.log('Interview price: ', state.interviewPrice.toString());
     console.log('Is authorized to reserve slot: ', state.isAuthorizedToReserveSlot.toString());
+
+    // const recruiter = state.recruiter;
+    // const currentAccountPubKey = await this.walletProvider.getPublicKey();
+    // const accountsMatch = recruiter.toString() == currentAccountPubKey.toString();
+
+    // console.log("Accounts match: ", accountsMatch);
     
-    return state.isAuthorizedToReserveSlot;
+    return false;
   }
 
   completeGrant = async () => {
@@ -360,6 +367,15 @@ export class MySolanaProvider implements Provider {
 
   async sendAndConfirm(tx: anchor.web3.Transaction, signers?: anchor.web3.Signer[], opts?: anchor.web3.ConfirmOptions): Promise<string>{
     const wallet  = this.wallet.solanaWallet;
+
+    console.log("sendAndConfirm signers: ",  signers);
+
+    if (signers !== undefined) {
+      signers.forEach((signer) => {
+        tx.partialSign(signer);
+      })
+    }
+    
     const { signature } = await wallet.signAndSendTransaction(tx);
     return signature;
   }

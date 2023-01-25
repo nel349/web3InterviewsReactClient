@@ -162,7 +162,7 @@ function LoginControl(props: any) {
     clientId: 'BGHqoKmB5d9bctZPsyd5TTwq3vpheZBr2HsdwLW3DscvmmtJ4xDbloOiNXzPRzDpoMvwfbVwEX9OREdL2I4i_q8',
     chainConfig: {
       chainNamespace: CHAIN_NAMESPACES.SOLANA,
-      chainId: '0x2',
+      chainId: '0x3',
       rpcTarget: "https://api.devnet.solana.com", // This is the mainnet RPC we have added, please pass on your own endpoint while creating an app
       displayName: "solana",
       ticker: "SOL",
