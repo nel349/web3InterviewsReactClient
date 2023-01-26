@@ -7,7 +7,7 @@ import { SafePay } from './target/types/safe_pay';
 import { PublicKey, Keypair, Transaction, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 import { initilizeAccounts, readAccount } from './safePay'
 
-import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { SolanaWallet } from "@web3auth/solana-provider";
 
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider"
@@ -82,26 +82,6 @@ export default class AnchorClient {
     
     const pubkey = await this.walletProvider.getPublicKey();
 
-    // const a = await this.program.rpc.initializeNewGrant(
-    //   this.initializedAccounts.pda.idx,
-    //   this.initializedAccounts.pda.stateBump,
-    //   this.initializedAccounts.pda.escrowBump,
-    //   amount, {
-    //   accounts: {
-    //     applicationState: this.initializedAccounts.pda.stateKey,
-    //     escrowWalletState: this.initializedAccounts.pda.escrowWalletKey,
-    //     mintOfTokenBeingSent: this.initializedAccounts.mintAddress,
-    //     recruiter: this.initializedAccounts.alice.publicKey,
-    //     candidate: this.initializedAccounts.bob.publicKey,
-    //     walletToWithdrawFrom: this.initializedAccounts.aliceWallet,
-    //     systemProgram: anchor.web3.SystemProgram.programId,
-    //     rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-    //     tokenProgram: TOKEN_PROGRAM_ID,
-    //   },
-    //   signers: [this.initializedAccounts.alice],
-    // });
-
-
     const tx = this.program.transaction.initializeNewGrant(
       this.initializedAccounts.pda.idx,
       this.initializedAccounts.pda.stateBump,
@@ -163,36 +143,55 @@ export default class AnchorClient {
 
   completeGrant = async () => {
 
+    const initializedAccounts = this.initializedAccounts;
+    const bob = initializedAccounts.bob;
+    const pubkey = await this.walletProvider.getPublicKey();
+    const wallet = this.walletProvider.wallet.solanaWallet;
+    
+
     // Create a token account for Bob.
     const bobTokenAccount = await getAssociatedTokenAddress(
-      this.initializedAccounts.mintAddress,
-      this.initializedAccounts.bob.publicKey,
+      initializedAccounts.mintAddress,
+      initializedAccounts.bob.publicKey,
       false
     )
-    console.log('Escrow wallet: ', this.initializedAccounts.pda.escrowWalletKey.toString())
+    console.log('Escrow wallet: ', this.initializedAccounts.pda.escrowWalletKey.toString());
 
-    // await this.program.rpc.completeGrant(
-    //   this.initializedAccounts.pda.idx,
-    //   this.initializedAccounts.pda.stateBump,
-    //   this.initializedAccounts.pda.escrowBump, {
-    //   accounts: {
-    //     applicationState: this.initializedAccounts.pda.stateKey,
-    //     escrowWalletState: this.initializedAccounts.pda.escrowWalletKey,
-    //     mintOfTokenBeingSent: this.initializedAccounts.mintAddress,
-    //     userSending: this.initializedAccounts.alice.publicKey,
-    //     userReceiving: this.initializedAccounts.bob.publicKey,
-    //     walletToDepositTo: bobTokenAccount,
+    const pda = initializedAccounts.pda;
 
-    //     systemProgram: anchor.web3.SystemProgram.programId,
-    //     rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-    //     tokenProgram: TOKEN_PROGRAM_ID,
-    //     associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
-    //   },
-    //   signers: [this.initializedAccounts.bob],
-    // });
+    const tx = this.program.transaction.withdrawPayment(pda.idx, pda.stateBump, pda.escrowBump, {
+      accounts: {
+          applicationState: pda.stateKey,
+          escrowWalletState: pda.escrowWalletKey,
+          mintOfTokenBeingSent: initializedAccounts.mintAddress,
+          recruiter: pubkey,
+          candidate: bob.publicKey,
+          walletToDepositTo: bobTokenAccount,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      }
+  });
+
+    const blockhash = (await this.connection.getLatestBlockhash("finalized")).blockhash;
+
+    tx.feePayer = pubkey;
+    tx.recentBlockhash = blockhash;
+
+    const signed = await this.walletProvider.sendAndConfirm(tx, [bob]);
+    console.log("TxID: ", signed);
+    // console.log("Serialized message: ", signed.serialize().toString("base64"));
+
+    // const signature = await this.connection.sendTransaction(tx, [bob]);
+    // console.log("Serialized message: ", tx.serialize().toString("base64"));
+
+    // const txsignature = await this.connection.sendRawTransaction(tx.serialize());
+
+    // console.log("TxID: ", signature);
 
     // // Assert that 20 tokens were sent back.
-    // const [, bobBalance] = await readAccount(bobTokenAccount, this.provider);
+    // const [, bobBalance] = await readAccount(bobTokenAccount, this.walletProvider);
     // assert.equal(bobBalance, '20000000');
     // console.log("Account balance for Bob: ", bobBalance);
 
