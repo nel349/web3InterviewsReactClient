@@ -197,6 +197,35 @@ export default class AnchorClient {
 
   }
 
+  setMeetingId = async () => {
+
+    const initializedAccounts = this.initializedAccounts;
+    const pubkey = await this.walletProvider.getPublicKey();
+    const wallet = this.walletProvider.wallet.solanaWallet;
+    const pda = initializedAccounts.pda;
+
+    const tx = this.program.transaction.setZoomMeetingId(pda.idx, pda.stateBump, "amount1234", new anchor.BN(0), {
+      accounts: {
+          applicationState: pda.stateKey,
+          mintOfTokenBeingSent: initializedAccounts.mintAddress,
+          recruiter: pubkey,
+          candidate: initializedAccounts.bob.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          tokenProgram: TOKEN_PROGRAM_ID,
+      }
+  });
+    const blockhash = (await this.connection.getLatestBlockhash("finalized")).blockhash;
+
+    tx.feePayer = pubkey;
+    tx.recentBlockhash = blockhash;
+    
+    const signedTx = await wallet.signTransaction(tx);
+
+    const signature = await this.walletProvider.sendAndConfirm(signedTx);
+    console.log("TxID: ", signature);
+  }
+
   pullBackFunds = async () => {
 
     // // Assert that 20 tokens were moved from Alice's account to the escrow.

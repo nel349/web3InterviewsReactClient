@@ -105,6 +105,14 @@ function ActivitiesComponents() {
     } 
   }
 
+  const setMeetingId = async () => {
+    try {
+      await client.setMeetingId();
+    } catch (error) {
+      console.log(error);
+    } 
+  }
+
   const completeGrant = async () => {
 
     await client.completeGrant();
@@ -203,6 +211,10 @@ function ActivitiesComponents() {
 
       <Button variant="contained" onClick={isAuthorizedToSlot} >
         isAuthorizedToSlot?
+      </Button>
+
+      <Button variant="contained" onClick={setMeetingId} >
+        setMeetingId_recruiter
       </Button>
       <Button variant="contained" onClick={completeGrant} >
         CompleteGrant
