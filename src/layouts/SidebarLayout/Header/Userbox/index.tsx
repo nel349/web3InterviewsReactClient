@@ -218,8 +218,10 @@ function LoginControl(props: any) {
 
           const mySolanaWallet = new MySolanaWallet(solanaWallet, connection);
 
+          const publicKey = await mySolanaWallet.getPublicKey();
+
           setSolanaProvider(new MySolanaProvider(connection, mySolanaWallet));
-          console.log("IS connected, ", signedIn);
+          console.log(`IS connected ${signedIn}, and public key ${publicKey}`);
         }
 
         // Fetch the balance for the specified public key

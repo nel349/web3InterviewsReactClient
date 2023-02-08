@@ -8,6 +8,7 @@ import { SidebarProvider } from 'src/contexts/SidebarContext';
 import * as serviceWorker from 'src/serviceWorker';
 import AuthenticationProvider from './content/applications/Users/settings/AuthenticationProvider';
 import { CookiesProvider } from "react-cookie";
+import MetaplexProvider from './content/applications/Users/settings/solana/metaplex/MetaplexProvider';
 
 ReactDOM.render(
   <HelmetProvider>
@@ -15,7 +16,9 @@ ReactDOM.render(
       <BrowserRouter>
         <AuthenticationProvider>
           <CookiesProvider>
+          <MetaplexProvider>
             <App />
+          </MetaplexProvider>
           </CookiesProvider>
         </AuthenticationProvider>
       </BrowserRouter>

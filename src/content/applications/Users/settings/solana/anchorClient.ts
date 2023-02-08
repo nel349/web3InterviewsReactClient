@@ -11,7 +11,7 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddres
 import { SolanaWallet } from "@web3auth/solana-provider";
 
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider"
-import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
+import { WalletAdapter } from '@metaplex-foundation/js';
 
 interface PDAParameters {
   escrowWalletKey: anchor.web3.PublicKey,
@@ -328,7 +328,7 @@ export class MyWallet implements Wallet {
   }
 }
 
-export class MySolanaWallet implements Wallet {
+export class MySolanaWallet implements Wallet, WalletAdapter {
 
   connection: Connection;
 
@@ -352,7 +352,9 @@ export class MySolanaWallet implements Wallet {
   // Get the first public key in solana wallet accounts.
   async getPublicKey(): Promise<PublicKey> {
     const accounts = await this.accounts();
-    return new PublicKey(accounts[0]);
+    const result = new PublicKey(accounts[0]);
+    this.publicKey = result;
+    return result;
   }
 
   async accounts(): Promise<string[]> {
@@ -365,6 +367,11 @@ export class MySolanaWallet implements Wallet {
       method: "solanaPrivateKey"
     });
     return String(privateKey);
+  }
+
+  async isConnected() {
+    const accounts = await this.accounts();
+    return accounts.length > 0;
   }
 }
 

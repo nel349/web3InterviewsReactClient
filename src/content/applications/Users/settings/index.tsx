@@ -8,6 +8,7 @@ import AnchorClient, { MySolanaProvider } from './solana/anchorClient';
 import { useAuthenticationContext } from './AuthenticationProvider';
 import { InlineWidget, PopupButton, PopupWidget } from "react-calendly";
 import { useCookies } from 'react-cookie';
+import { MintNFTs } from './solana/metaplex/MintNFTs';
 
 let BASE_URL = "https://auth.calendly.com/oauth/authorize?client_id=-rsdA8qUQlFFRUBfzeiagOq_kR2BSo2ml48nK4SIZhk&response_type=code&redirect_uri=https://localhost:3000/free/sample-video-page&code_challenge_method=S256&code_challenge=";
 
@@ -50,7 +51,13 @@ function ActivitiesComponents() {
   };
 
   useEffect(() => {
-    console.log("use effect: Access token ", cookies.token)
+    console.log("use effect: Access token ", cookies.token);
+
+    (async () => {
+      const current = solanaProvider?.wallet?.getPublicKey();
+      console.log("Current wallet connected:", current);
+    })();
+    
     const token = cookies.token;
     if (token.length > 0) {
       setCalendlyService(new CalendlyService(token));
@@ -294,6 +301,8 @@ function ActivitiesComponents() {
       <Button variant="contained" onClick={getUserEventTypes} >
         getUserEventTypes
       </Button>
+
+      <MintNFTs></MintNFTs>
 
 
 
